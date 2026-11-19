@@ -1,5 +1,110 @@
-<|DOCTYPE html>
-<html>
-<head><title>Local Market Pi</title></head>
-<body><h1>welcome Local Market Pi</h1></body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Market Pi</title>
+  <script src="https://minepi.com"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f4f1f8; color: #222; }
+    header { background: #593b8b; color: white; padding: 15px; text-align: center; }
+    .container { padding: 15px; max-width: 600px; margin: auto; }
+    .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .btn { background: #593b8b; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 8px; }
+    .btn-gold { background: #f4b41a; color: #222; }
+    input, textarea { width: 100%; padding: 8px; margin: 5px 0 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    .price { color: #593b8b; font-weight: bold; font-size: 1.1em; }
+    #status { font-size: 0.9em; color: #e0d4f5; margin-top: 5px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>Local Market Pi</h2>
+  <p id="status">Not connected to Pi Network</p>
+  <button class="btn btn-gold" onclick="loginPi()">Connect Pi Wallet / Login</button>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h3>Post New Item / Service</h3>
+    <input type="text" id="itemName" placeholder="Item Name (e.g. Men Sneakers)">
+    <input type="number" id="itemPrice" placeholder="Price in Test-Pi (e.g. 2.5)">
+    <textarea id="itemDesc" placeholder="Short description & location..."></textarea>
+    <button class="btn" onclick="addItem()">List on Market</button>
+  </div>
+
+  <h3>Available Goods & Services</h3>
+  <div id="marketList">
+    <div class="card">
+      <h4>Original Men Canvas Shoes</h4>
+      <p>Clean size 42 sneakers available for fast local pickup.</p>
+      <p class="price">Price: 3.5 Test-Pi</p>
+      <button class="btn btn-gold" onclick="buyItem('Original Men Canvas Shoes', 3.5)">Buy with Pi</button>
+    </div>
+    <div class="card">
+      <h4>Smartphone Screen Protector & Case</h4>
+      <p>Shockproof clear cover and tempered glass for all models.</p>
+      <p class="price">Price: 1.2 Test-Pi</p>
+      <button class="btn btn-gold" onclick="buyItem('Smartphone Screen Protector & Case', 1.2)">Buy with Pi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const Pi = window.Pi;
+  Pi.init({ version: "2.0", sandbox: true });
+
+  async function loginPi() {
+    try {
+      const scopes = ['username', 'payments'];
+      const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+      document.getElementById('status').innerText = "Welcome, @" + auth.user.username;
+      alert("Connected successfully as @" + auth.user.username);
+    } catch (err) {
+      alert("Please open this app inside Pi Browser to login.");
+    }
+  }
+
+  function onIncompletePaymentFound(payment) {
+    console.log("Incomplete payment found:", payment);
+  }
+
+  function addItem() {
+    const name = document.getElementById('itemName').value;
+    const price = document.getElementById('itemPrice').value;
+    const desc = document.getElementById('itemDesc').value;
+    if (!name || !price) { alert("Please enter item name and price."); return; }
+
+    const list = document.getElementById('marketList');
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h4>${name}</h4><p>${desc}</p><p class="price">Price: ${price} Test-Pi</p><button class="btn btn-gold" onclick="buyItem('${name}', ${price})">Buy with Pi</button>`;
+    list.prepend(card);
+
+    document.getElementById('itemName').value = '';
+    document.getElementById('itemPrice').value = '';
+    document.getElementById('itemDesc').value = '';
+    alert("Item listed on Local Market Pi!");
+  }
+
+  async function buyItem(itemName, amount) {
+    try {
+      const payment = await Pi.createPayment({
+        amount: parseFloat(amount),
+        memo: "Purchase: " + itemName,
+        metadata: { item: itemName }
+      }, {
+        onReadyForServerApproval: function(paymentId) { alert("Payment ready for approval: " + paymentId); },
+        onReadyForServerCompletion: function(paymentId, txid) { alert("Payment Completed! TxID: " + txid); },
+        onCancel: function(paymentId) { alert("Payment cancelled."); },
+        onError: function(error, payment) { alert("Payment error: " + error.message); }
+      });
+    } catch (err) {
+      alert("Open inside Pi Browser and click Connect Pi Wallet first.");
+    }
+  }
+</script>
+
+</body>
 </html>
